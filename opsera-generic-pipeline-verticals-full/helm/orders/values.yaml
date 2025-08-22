@@ -1,0 +1,19 @@
+image:
+  repository: yourrepo/orders
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8002
+
+
+env:
+  - name: AUTH_MODE
+    value: "apikey"
+  - name: DEMO_JWT_SECRET
+    value: "demo-secret"
+  - name: VERTICAL
+    value: ""
+  - name: DEMO_API_KEY
+    value: "demo-key"

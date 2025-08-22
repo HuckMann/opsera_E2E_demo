@@ -1,0 +1,82 @@
+openapi: 3.0.3
+info:
+  title: Scheduling Service
+  version: "0.1.0"
+servers:
+  - url: http://localhost
+paths:
+
+  /healthz:
+    get:
+      summary: Liveness
+      responses:
+        '200': { description: OK }
+  /scheduling/slots:
+    get:
+      summary: Get available slots
+      parameters:
+        - in: query
+          name: resourceId
+          schema: { type: string }
+        - in: query
+          name: date
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: List of slots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Slot'
+  /scheduling/appointments:
+    post:
+      summary: Create an appointment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentRequest'
+      responses:
+        '200':
+          description: Appointment booked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+
+    Slot:
+      type: object
+      properties:
+        resourceId: { type: string }
+        date: { type: string, format: date }
+        start: { type: string }
+        end: { type: string }
+        available: { type: boolean }
+    AppointmentRequest:
+      type: object
+      properties:
+        resourceId: { type: string }
+        date: { type: string, format: date }
+        start: { type: string }
+        end: { type: string }
+        customerId: { type: string }
+      required: [ resourceId, date, start, end, customerId ]
+    AppointmentResponse:
+      type: object
+      properties:
+        appointmentId: { type: string }
+        status: { type: string }
+
+security:
+  - ApiKeyAuth: []

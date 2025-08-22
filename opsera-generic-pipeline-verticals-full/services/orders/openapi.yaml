@@ -1,0 +1,68 @@
+openapi: 3.0.3
+info:
+  title: Orders Service
+  version: "0.2.0"
+servers:
+  - url: http://localhost
+paths:
+
+  /healthz:
+    get:
+      summary: Liveness
+      responses:
+        '200': { description: OK }
+  /orders:
+    post:
+      summary: Create order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '200':
+          description: Order accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+
+    OrderItem:
+      type: object
+      properties:
+        sku: { type: string }
+        quantity: { type: integer, minimum: 1 }
+      required: [ sku, quantity ]
+    OrderRequest:
+      type: object
+      properties:
+        customerId: { type: string }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/OrderItem' }
+      required: [ customerId, items ]
+    OrderResponse:
+      type: object
+      properties:
+        orderId: { type: string }
+        status: { type: string }
+
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+

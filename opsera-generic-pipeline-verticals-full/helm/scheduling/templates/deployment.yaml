@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduling
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: scheduling }
+  template:
+    metadata:
+      labels: { app: scheduling }
+    spec:
+      containers:
+        - name: scheduling
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          ports:
+            - containerPort: 8004
+          env:
+          {{ toYaml .Values.env | nindent 12 }}
+          args: ["uvicorn", "services.scheduling.app:app", "--host", "0.0.0.0", "--port", "8004"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduling
+spec:
+  type: "{{ .Values.service.type }}"
+  selector:
+    app: scheduling
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 8004
+      protocol: TCP
+      name: http

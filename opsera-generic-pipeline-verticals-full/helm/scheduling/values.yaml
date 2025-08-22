@@ -1,0 +1,19 @@
+image:
+  repository: yourrepo/scheduling
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8004
+
+
+env:
+  - name: AUTH_MODE
+    value: "apikey"
+  - name: DEMO_JWT_SECRET
+    value: "demo-secret"
+  - name: VERTICAL
+    value: "healthcare"
+  - name: DEMO_API_KEY
+    value: "demo-key"

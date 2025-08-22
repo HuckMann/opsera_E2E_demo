@@ -1,0 +1,49 @@
+openapi: 3.0.3
+info:
+  title: Billing Service
+  version: "0.1.0"
+servers:
+  - url: http://localhost
+paths:
+
+  /healthz:
+    get:
+      summary: Liveness
+      responses:
+        '200': { description: OK }
+  /billing/invoices:
+    get:
+      summary: List invoices
+      parameters:
+        - in: query
+          name: customerId
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invoice'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+
+    Invoice:
+      type: object
+      properties:
+        invoiceId: { type: string }
+        customerId: { type: string }
+        amount: { type: number, format: float }
+        currency: { type: string, default: USD }
+        status: { type: string }
+
+security:
+  - ApiKeyAuth: []

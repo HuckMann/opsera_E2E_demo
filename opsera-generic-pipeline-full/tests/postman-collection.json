@@ -1,0 +1,9 @@
+{
+  "info": { "name": "Demo API Tests", "_postman_id": "demo-collection", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json" },
+  "item": [
+    {
+      "name": "Inventory health",
+      "request": { "method": "GET", "header": [{ "key": "X-API-Key", "value": "demo-key" }], "url": "{{baseUrl}}/healthz" }
+    }
+  ]
+}

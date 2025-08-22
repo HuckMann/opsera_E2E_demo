@@ -1,0 +1,36 @@
+services:
+  inventory:
+    build: .
+    command: uvicorn services.inventory.app:app --host 0.0.0.0 --port 8001
+    environment:
+      - VERTICAL=retail
+      - AUTH_MODE=apikey
+      - DEMO_API_KEY=demo-key
+      - DEMO_JWT_SECRET=demo-secret
+    ports: [ "8001:8001" ]
+  orders:
+    build: .
+    command: uvicorn services.orders.app:app --host 0.0.0.0 --port 8002
+    environment:
+      - AUTH_MODE=apikey
+      - DEMO_API_KEY=demo-key
+      - DEMO_JWT_SECRET=demo-secret
+    ports: [ "8002:8002" ]
+  billing:
+    build: .
+    command: uvicorn services.billing.app:app --host 0.0.0.0 --port 8003
+    environment:
+      - VERTICAL=fintech
+      - AUTH_MODE=apikey
+      - DEMO_API_KEY=demo-key
+      - DEMO_JWT_SECRET=demo-secret
+    ports: [ "8003:8003" ]
+  scheduling:
+    build: .
+    command: uvicorn services.scheduling.app:app --host 0.0.0.0 --port 8004
+    environment:
+      - VERTICAL=healthcare
+      - AUTH_MODE=apikey
+      - DEMO_API_KEY=demo-key
+      - DEMO_JWT_SECRET=demo-secret
+    ports: [ "8004:8004" ]

@@ -1,0 +1,12 @@
+image:
+  repository: yourrepo/inventory
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8001
+
+env:
+  - name: DEMO_API_KEY
+    value: "demo-key"

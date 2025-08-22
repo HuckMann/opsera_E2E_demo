@@ -1,0 +1,12 @@
+image:
+  repository: yourrepo/scheduling
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8004
+
+env:
+  - name: DEMO_API_KEY
+    value: "demo-key"

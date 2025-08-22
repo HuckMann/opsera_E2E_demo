@@ -1,0 +1,50 @@
+openapi: 3.0.3
+info:
+  title: Inventory Service
+  version: "0.1.0"
+servers:
+  - url: http://localhost
+paths:
+
+  /healthz:
+    get:
+      summary: Liveness
+      responses:
+        '200': { description: OK }
+  /inventory/items:
+    get:
+      summary: List inventory items
+      parameters:
+        - in: query
+          name: sku
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 50 }
+      responses:
+        '200':
+          description: List of items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+  schemas:
+
+    Item:
+      type: object
+      properties:
+        sku: { type: string }
+        name: { type: string }
+        quantity: { type: integer }
+
+security:
+  - ApiKeyAuth: []

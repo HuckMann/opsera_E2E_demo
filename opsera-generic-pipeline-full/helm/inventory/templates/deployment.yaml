@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: inventory }
+  template:
+    metadata:
+      labels: { app: inventory }
+    spec:
+      containers:
+        - name: inventory
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          ports:
+            - containerPort: 8001
+          env:
+          {{ toYaml .Values.env | nindent 12 }}
+          args: ["uvicorn", "services.inventory.app:app", "--host", "0.0.0.0", "--port", "8001"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory
+spec:
+  type: "{{ .Values.service.type }}"
+  selector:
+    app: inventory
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 8001
+      protocol: TCP
+      name: http
