@@ -1,0 +1,154 @@
+# This YAML defines a multi-stage Opsera pipeline based on the provided spreadsheet.
+# It includes stages for Continuous Integration (CI) and Continuous Delivery (CD).
+# Please replace the placeholder values (e.g., "your-github-repo-url") with your actual details.
+---
+apiVersion: "opsera.io/v1"
+kind: "pipeline"
+metadata:
+  name: "project-ci-cd"
+  description: "CI/CD pipeline for a project, with security and quality gates."
+  type: "CI/CD"
+spec:
+  # The `repositoryUrl` should point to the repository that triggers this pipeline.
+  # This is crucial for the "Preflight" step.
+  repositoryUrl: "git@github.com:your-org/your-repo.git"
+  
+  # Define the stages of the pipeline.
+  # The stages are executed in the order they are listed.
+  stages:
+    # ------------------
+    # CI Stage: Build and Test
+    # This stage handles all the build, test, and scanning tasks.
+    - name: "Continuous Integration"
+      type: "CI"
+      tasks:
+        # Task 1: Preflight
+        # This task checks out the code from the Git repository.
+        - name: "Preflight Checkout"
+          tool: "github"
+          toolSpec:
+            repo: "your-org/your-repo"
+            pipelineType: "checkout"
+            
+        # Task 2: Unit Tests
+        # Executes Python unit tests. Assumes a `requirements.txt` file exists.
+        - name: "Run Python Unit Tests"
+          tool: "python"
+          toolSpec:
+            command: "pip install -r services/requirements.txt && pytest -q"
+            
+        # Task 3: Build Images
+        # Builds and pushes a Docker image to a registry.
+        # This task uses variables from the pipeline, like `${REGISTRY}` and `${IMAGE_TAG}`.
+        - name: "Build and Push Docker Images"
+          tool: "docker"
+          toolSpec:
+            command: "build"
+            imageName: "${REGISTRY}/${IMAGE_NAME}"
+            imageTag: "${IMAGE_TAG}"
+            push: true
+
+        # Task 4: SBOM
+        # Generates a Software Bill of Materials (SBOM) using Syft.
+        - name: "Generate SBOM"
+          tool: "syft"
+          toolSpec:
+            command: "syft . -o spdx-json > sbom.json"
+
+        # Task 5: Static Analysis Security Testing (SAST)
+        # Runs a Semgrep scan with a specific configuration.
+        - name: "SAST Scan (Semgrep)"
+          tool: "semgrep"
+          toolSpec:
+            command: "semgrep --config security/semgrep.yml --error"
+            
+        # Task 6: Dependency Scanning
+        # Uses Snyk and Trivy to scan for vulnerabilities.
+        - name: "Dependency Scan (Snyk and Trivy)"
+          tool: "snyk"
+          toolSpec:
+            command: "snyk test --all-projects --severity-threshold=high"
+        
+        - name: "Vulnerability Scan (Trivy)"
+          tool: "trivy"
+          toolSpec:
+            command: "trivy --ignore-unfixed -s HIGH,CRITICAL --exit-code 1"
+
+    # ------------------
+    # CD Stage: Plan and Deploy to Staging
+    # This stage is triggered for PRs or a staging environment.
+    - name: "CD to Staging"
+      type: "CD"
+      when: "pr_or_staging"
+      tasks:
+        # Task 7: Terraform Plan
+        # Initializes and runs a Terraform plan.
+        - name: "Terraform Plan"
+          tool: "terraform"
+          toolSpec:
+            command: "init -upgrade && plan -input=false -out=tfplan"
+            workingDirectory: "deploy/terraform"
+
+        # Task 8: Preview Namespace and Helm
+        # Uses kubectl and helm to set up a preview environment.
+        - name: "Preview Namespace with Helm"
+          tool: "kubectl"
+          toolSpec:
+            command: |
+              NS=${NAMESPACE_PR_PREFIX}${PR_NUMBER:-stg};
+              kubectl get ns $NS || kubectl create ns $NS;
+              helm upgrade --install inventory-svc-pr helm/repo -n ${NS} --set repository=v,tag=${IMAGE_TAG}
+
+    # ------------------
+    # CD Stage: Quality Gate and Approval
+    - name: "Quality Gate & Approvals"
+      type: "CD"
+      when: "pr_or_staging"
+      tasks:
+        # Task 9: Dynamic Application Security Testing (DAST)
+        # Runs a ZAP baseline scan.
+        - name: "DAST Scan (ZAP)"
+          tool: "zap"
+          toolSpec:
+            command: "zap-baseline.py -t http://inventory.${NS}.svc.cluster.local:8001/healthz -I -r html || true"
+
+        # Task 10: API End-to-End Tests
+        # Executes API tests using Newman and K6.
+        - name: "API E2E Tests"
+          tool: "newman+k6"
+          toolSpec:
+            command: "newman run tests/postman-collection.json --env-var baseUrl=http://inventory.${NS}.svc.cluster.local:8001 && k6 run k6-smoke.js"
+
+        # Task 11: Quality Gate
+        # An automated quality gate, likely from Opsera itself.
+        - name: "Quality Gate"
+          tool: "opsera-g"
+          
+        # Task 12: Approvals
+        # Integrates with Jira for manual approval.
+        - name: "Manual Approval (Jira)"
+          tool: "jira+s"
+          toolSpec:
+            manualStep: true
+            message: "Link Jira ticket; Approve Now Standard Change;"
+            
+    # ------------------
+    # CD Stage: Production Deployment
+    - name: "Production Deployment"
+      type: "CD"
+      when: "prod"
+      tasks:
+        # Task 13: Post-Deployment Verification
+        # A simple verification step using curl.
+        - name: "Verify Production"
+          tool: "curl"
+          toolSpec:
+            command: "curl -fsS https://prod.example.com/healthz"
+
+        # Task 14: Insights and Notifications
+        # Publishes metrics and sends a Slack summary.
+        - name: "Publish Insights & Slack"
+          tool: "slack"
+          toolSpec:
+            command: "publish run metrics to  and post Slack summary"
+
